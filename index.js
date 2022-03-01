@@ -166,10 +166,10 @@ app.use(function fiveHundredHandler(err, req, res, next) {
 });
 
 // Start server
-app.listen(1234, function (err) {
+app.listen(Number(process.env.PORT), function (err) {
   if (err) {
     return console.error(err);
   }
 
-  console.log("Started at http://localhost:1234");
+  console.log(`Started at ${process.env.PORT}`);
 });
