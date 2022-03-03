@@ -69,6 +69,7 @@ const updateLeague = async () => {
     last_checked,
   ] of data) {
     await updateCompetition(idcompetition);
+    await updateTeams(idcompetition);
   }
 };
 
@@ -116,6 +117,7 @@ const updateCompetition = async (idcompetition) => {
         coach_name,
       ]) => ({
         id: idstanding,
+        idteam: idteam,
         race: idrace,
         team: team_name,
         coach: coach_name,
@@ -130,10 +132,92 @@ const updateCompetition = async (idcompetition) => {
   )}
   ON CONFLICT (id)
   DO
-      UPDATE SET team = EXCLUDED.team, race = EXCLUDED.race, coach = EXCLUDED.coach, points = EXCLUDED.points, tv = EXCLUDED.tv, win = EXCLUDED.win, draw = EXCLUDED.draw, lost = EXCLUDED.lost, id_competition = EXCLUDED.id_competition;
+      UPDATE SET team = EXCLUDED.team, idteam = EXCLUDED.idteam, race = EXCLUDED.race, coach = EXCLUDED.coach, points = EXCLUDED.points, tv = EXCLUDED.tv, win = EXCLUDED.win, draw = EXCLUDED.draw, lost = EXCLUDED.lost, id_competition = EXCLUDED.id_competition;
   `;
 };
 console.log("Insert en la base de datos terminado");
+
+const updateTeams = async (idcompetition, idteam) => {
+  console.log(`Obteniendo informacion de equipos en ${idcompetition}`);
+  const request = await axios.get(
+    `https://www.mordrek.com:666/api/v1/queries?req={%22compTeamPlayers%22:{%22id%22:%22compTeamPlayers%22,%22idmap%22:{%22idcompetition%22:%22${idcompetition}%22},%22idteam%22:%22${idteam}%22,%22filters%22:null,%22ordercol%22:%22number%22,%22order%22:%22asc%22,%22limit%22:50,%22from%22:0,%22group%22:null,%22aggr%22:%22sum%22}}`
+  );
+
+  const response = request.data;
+  const data = response.response.compTeamPlayers.result.rows;
+  console.log(data);
+
+  if (data.length == 0) return;
+  await sql`
+    INSERT INTO teamPlayers ${sql(
+      data.map(
+        ([
+          active,
+          idteam,
+          idplayer,
+          player_origin_id,
+          idplayertype,
+          player_name,
+          idleague,
+          idcompetition,
+          idorigin,
+          ma,
+          ag,
+          av,
+          st,
+          skills,
+          cas_state,
+          cas_sustained,
+          xp,
+          xp_gain,
+          level,
+          number,
+          td,
+          run_meters,
+          pass_meters,
+          gp,
+          passes,
+          catches,
+          completions,
+          pushouts,
+          blocks_for,
+          breaks_for,
+          stuns_for,
+          kos_for,
+          casualties_for,
+          kills_for,
+          blocks_against,
+          breaks_against,
+          stuns_against,
+          kos_against,
+          casualties_against,
+          kills_against,
+          turnovers,
+          interceptions,
+          expulsions,
+        ]) => ({
+          idteam: idteam,
+          idplayer: idplayer,
+          idplayertype: idplayertype,
+          player_name: player_name,
+          idcompetition: idcompetition,
+          ma: ma,
+          ag: ag,
+          av: av,
+          st: st,
+          skills: skills,
+          cas_sustained,
+          xp_gain: xp_gain,
+          level: level,
+        })
+      )
+    )}
+    ON CONFLICT (idplayer)
+    DO
+        UPDATE SET idteam = EXCLUDED.idteam, idplayertype = EXCLUDED.idplayertype, player_name = EXCLUDED.player_name, idcompetition = EXCLUDED.idcompetition, ma = EXCLUDED.ma, ag = EXCLUDED.ag, av = EXCLUDED.av, st = EXCLUDED.st, skills = EXCLUDED.skills, cas_sustained = EXCLUDED.cas_sustained, xp_gain = EXCLUDED.xp_gain, level = EXCLUDED.level;
+  `;
+};
+console.log("Insert en la base de Players terminado");
 
 app.get("/update", (req, res) => {
   updateLeague().then(() => {
@@ -149,7 +233,12 @@ app.getAsync("/data", async (req, res) => {
   SELECT * FROM standings join races on standings.race = races.id join competitions on standings.id_competition = competitions.id
   `;
 
-  res.send({ competitions, standings });
+  const teamPlayers = await sql`
+  SELECT teamPlayers.idteam, idplayer, idplayertype, player_name, idcompetition, ma, ag, av, st, skills, cas_sustained, xp_gain, level, team, competitions.name
+  FROM teamPlayers join standings on teamPlayers.idteam = standings.idteam join competitions on teamPlayers.idcompetition = competitions.id
+  `;
+
+  res.send({ competitions, standings, teamPlayers });
 });
 
 // Routes and middleware
