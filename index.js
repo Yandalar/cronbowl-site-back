@@ -42,13 +42,13 @@ const updateLeague = async () => {
           last_checked,
         ]) => ({
           id: idcompetition,
-          name: competition_name,
+          competition_name: competition_name,
         })
       )
     )}
     ON CONFLICT (id)
     DO
-      UPDATE SET name = EXCLUDED.name;
+      UPDATE SET competition_name = EXCLUDED.competition_name;
   `;
   console.log("Insert en la base de datos terminado");
 
@@ -234,7 +234,7 @@ app.getAsync("/data", async (req, res) => {
   `;
 
   const teamPlayers = await sql`
-  SELECT teamPlayers.idteam, idplayer, idplayertype, player_name, idcompetition, ma, ag, av, st, skills, cas_sustained, xp_gain, level, team, competitions.name
+  SELECT teamPlayers.idteam, idplayer, idplayertype, player_name, idcompetition, ma, ag, av, st, skills, cas_sustained, xp_gain, level, team, competitions.competition_name
   FROM teamPlayers join standings on teamPlayers.idteam = standings.idteam join competitions on teamPlayers.idcompetition = competitions.id
   `;
 
