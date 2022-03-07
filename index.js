@@ -234,8 +234,8 @@ app.getAsync("/data", async (req, res) => {
   `;
 
   const teamPlayers = await sql`
-  SELECT teamPlayers.idteam, idplayer, idplayertype, player_name, idcompetition, ma, ag, av, st, skills, cas_sustained, xp_gain, level, team, competitions.competition_name
-  FROM teamPlayers join standings on teamPlayers.idteam = standings.idteam join competitions on teamPlayers.idcompetition = competitions.id
+  SELECT teamPlayers.idteam, idplayer, idplayertype, player_name, idcompetition, ma, ag, av, st, skills, cas_sustained, xp_gain, level, team, competitions.competition_name, playertype.type
+  FROM teamPlayers join standings on teamPlayers.idteam = standings.idteam join competitions on teamPlayers.idcompetition = competitions.id join playertype on teamPlayers.idplayertype = playertype.type_id
   `;
 
   res.send({ competitions, standings, teamPlayers });
